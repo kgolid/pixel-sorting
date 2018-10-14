@@ -72,7 +72,7 @@ let sketch = function(p) {
         let cands = getRandoms(selection_size, nx * row_idx + i, nx * ny);
         let bi = findBestMatch(origin, mat, cands);
         let pixel_to_swap = [...mat[bi[0]][bi[1]]];
-        drawPixel(bi, pixel_to_swap);
+        drawPixel(bi, mat[row_idx][i]);
         sorted.push(pixel_to_swap);
         mat[bi[0]][bi[1]] = [...mat[row_idx][i]];
       }
