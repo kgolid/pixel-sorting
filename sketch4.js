@@ -1,10 +1,12 @@
 let nx = 512;
 let ny = 512;
 let size = 2;
+let img_resolution = 2;
 
-let selection_size = 20;
+let selection_size = 10;
+let diagonal = false;
 
-let tick;
+let tick = 0;
 let img;
 
 let sketch = function(p) {
@@ -15,7 +17,7 @@ let sketch = function(p) {
   };
 
   p.setup = function() {
-    p.createCanvas(1024, 1024);
+    p.createCanvas(nx * size, nx * size);
     p.pixelDensity(1);
     img.loadPixels();
     p.loadPixels();
@@ -24,11 +26,9 @@ let sketch = function(p) {
     p.randomSeed(THE_SEED);
     p.noStroke();
 
-    tick = 0;
-
     imgpixels = newArray(ny).map((_, j) =>
       newArray(nx).map((_, i) => {
-        var loc = (i + j * img.width) * 4 * 2;
+        var loc = (i + j * img.width) * 4 * img_resolution;
         return [img.pixels[loc + 0], img.pixels[loc + 1], img.pixels[loc + 2]];
       })
     );
@@ -48,17 +48,22 @@ let sketch = function(p) {
   function drawImage(image) {
     image.forEach((pxr, j) =>
       pxr.forEach((px, i) => {
-        p.fill(px[0], px[1], px[2]);
-        p.rect(size * i, size * j, size, size);
+        drawPixel([j, i], px);
       })
     );
   }
 
+  function drawPixel(pos, col) {
+    p.fill(...col);
+    p.rect(size * pos[1], size * pos[0], size, size);
+  }
+
   function sortRow(mat, row) {
-    let sorted = [];
     for (let col = 0; col < mat[row].length; col++) {
       if (row !== 0) {
-        let origin = getOrigin(mat, col, row);
+        let origin = diagonal
+          ? getDiagonalOrigin(mat, col, row)
+          : getOrigin(mat, col, row);
         let cands = getRandoms(selection_size, nx * row + col, nx * ny);
         let bi = findBestMatch(origin, mat, cands);
 
@@ -71,23 +76,18 @@ let sketch = function(p) {
         mat[row][col] = pixel_to_swap;
       }
     }
-    return sorted;
   }
 
   function getOrigin(mat, x, y) {
     let row_above = mat[y - 1];
-    if (x === 0) return meanCol(row_above[x], row_above[x + 1]);
-    if (x === mat[y].length - 1) return meanCol(row_above[x - 1], row_above[x]);
+    if (x < 1) return meanCol(row_above[x], row_above[x + 1]);
+    if (x >= mat[y].length - 1) return meanCol(row_above[x - 1], row_above[x]);
     return meanCol(row_above[x], meanCol(row_above[x - 1], row_above[x + 1]));
   }
 
-  function getRandoms(n, from, to) {
-    let arr = [];
-    while (arr.length < n) {
-      let rand = Math.floor(Math.random() * (to - from)) + from;
-      arr.push(rand);
-    }
-    return arr;
+  function getDiagonalOrigin(mat, x, y) {
+    if (x === 0) return mat[y - 1][x];
+    return meanCol(mat[y - 1][x], mat[y][x - 1]);
   }
 
   function findBestMatch(origin, arr, candidates) {
@@ -105,11 +105,6 @@ let sketch = function(p) {
       }
     }
     return best_idx;
-  }
-
-  function drawPixel(pos, col) {
-    p.fill(col[0], col[1], col[2]);
-    p.rect(size * pos[1], size * pos[0], size, size);
   }
 
   function compareCols(a, b) {
@@ -141,4 +136,13 @@ function newArray(n, value) {
     array[i] = value;
   }
   return array;
+}
+
+function getRandoms(n, from, to) {
+  let arr = [];
+  while (arr.length < n) {
+    let rand = Math.floor(Math.random() * (to - from)) + from;
+    arr.push(rand);
+  }
+  return arr;
 }
