@@ -3,7 +3,7 @@ let ny = 512;
 let size = 2;
 let tick;
 
-let selection_size = 20;
+let selection_size = 80;
 
 let img;
 
@@ -11,7 +11,7 @@ let sketch = function(p) {
   let THE_SEED;
 
   p.preload = function() {
-    img = p.loadImage('./insta3.jpg');
+    img = p.loadImage('./insta4.jpg');
   };
 
   p.setup = function() {
@@ -71,9 +71,9 @@ let sketch = function(p) {
 
         let cands = getRandoms(selection_size, nx * row_idx + i, nx * ny);
         let bi = findBestMatch(origin, mat, cands);
-        let pixel_to_swap = [...mat[bi[0]][bi[1]]];
+
         drawPixel(bi, mat[row_idx][i]);
-        sorted.push(pixel_to_swap);
+        sorted.push([...mat[bi[0]][bi[1]]]);
         mat[bi[0]][bi[1]] = [...mat[row_idx][i]];
       }
     }
