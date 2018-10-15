@@ -3,7 +3,7 @@ let ny = 512;
 let size = 2;
 let img_resolution = 2;
 
-let selection_size = 10;
+let selection_size = 6;
 let diagonal = false;
 
 let tick = 0;
@@ -13,7 +13,7 @@ let sketch = function(p) {
   let THE_SEED;
 
   p.preload = function() {
-    img = p.loadImage('./insta4.jpg');
+    img = p.loadImage('./insta2.jpg');
   };
 
   p.setup = function() {
