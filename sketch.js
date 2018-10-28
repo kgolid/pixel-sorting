@@ -1,7 +1,7 @@
 let nx = 512;
 let ny = 512;
 let size = 2;
-let img_resolution = 2;
+let img_resolution = 5;
 
 let selection_size = 6;
 let diagonal = false;
@@ -14,7 +14,7 @@ let sketch = function(p) {
 
   p.preload = function() {
     img = p.loadImage(
-      'https://raw.githubusercontent.com/kgolid/pixel-sorting/master/insta2.jpg'
+      'https://raw.githubusercontent.com/kgolid/pixel-sorting/master/img.jpg'
     );
   };
 
