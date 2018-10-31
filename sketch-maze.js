@@ -18,7 +18,7 @@ let sketch = function(p) {
   let THE_SEED;
 
   p.preload = function() {
-    img = p.loadImage('./insta1.jpg');
+    img = p.loadImage('https://raw.githubusercontent.com/kgolid/pixel-sorting/master/img.jpg');
   };
 
   p.setup = function() {
