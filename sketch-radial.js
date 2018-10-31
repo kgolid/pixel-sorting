@@ -1,7 +1,7 @@
 let nx = 512;
 let ny = 512;
 let size = 2;
-let img_resolution = 2;
+let img_resolution = 5;
 
 let expansion_candidates = 2;
 let selection_size = 30;
