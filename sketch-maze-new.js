@@ -1,7 +1,7 @@
 let nx;
 let ny;
 let size = 2;
-let img_resolution = 3;
+let img_resolution = 5;
 
 let expand_with_diagonals = false;
 let expansion_candidates = 10;
