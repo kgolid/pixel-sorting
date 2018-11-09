@@ -1,7 +1,7 @@
 let nx = 512;
 let ny = 512;
 let size = 2;
-let img_resolution = 2;
+let img_resolution = 5;
 
 let expansion_candidates = 8;
 let selection_size = 100;
@@ -18,7 +18,7 @@ let sketch = function(p) {
   let THE_SEED;
 
   p.preload = function() {
-    img = p.loadImage('./insta1.jpg');
+    img = p.loadImage('https://raw.githubusercontent.com/kgolid/pixel-sorting/master/img.jpg');
   };
 
   p.setup = function() {
