@@ -2,6 +2,7 @@ let nx;
 let ny;
 let size = 2;
 let img_resolution = 3;
+let speed = 500;
 
 let expand_with_diagonals = false;
 let expansion_candidates = 10;
@@ -57,26 +58,28 @@ let sketch = function(p) {
 
     front = newArray(ny).map((_, j) =>
       newArray(nx).map((_, i) => {
-        return { bx: i, by: j, filled: false };
+        return { bx: i, by: j, filled: false, adjacent: false, dist: -1 };
       })
     );
     drawImage(imgpixels);
 
-    const centre = [Math.floor(nx / 2), Math.floor(ny / 2), 0];
+    const centre = [Math.floor(nx / 2), Math.floor(ny / 2)];
     front[centre[1]][centre[0]] = {
       bx: centre[0],
       by: centre[1],
-      filled: true
+      filled: true,
+      neighbor: true,
+      dist: 0
     };
 
-    drawPixel([centre[1], centre[0]]);
+    drawPixel(centre);
     candidates = expandNeighborhood([centre], centre);
 
     pixels_placed = 1;
   };
 
   p.draw = function() {
-    if (pixels_placed < nx * ny - 500) placePixels(500);
+    if (pixels_placed < nx * ny - speed) placePixels(speed);
     else if (pixels_placed < nx * ny) placePixels(nx * ny - pixels_placed);
   };
 
@@ -97,7 +100,7 @@ let sketch = function(p) {
   function placePixels(n) {
     for (i = 0; i < n; i++) {
       // Find expansion pixel and expand candidates accordingly.
-      const currentPos = getNearest(candidates, reversed);
+      const currentPos = getNearest(candidates);
       candidates = expandNeighborhood(candidates, currentPos);
 
       // Find best matching pixel among selection.
@@ -218,8 +221,8 @@ let sketch = function(p) {
     return arr;
   }
 
-  function getNearest(rs, reverse) {
-    reverse = p.random() > 0.98 ? !reverse : reverse;
+  function getNearest(rs) {
+    const reverse = p.random() > 0.97 ? !reversed : reversed;
     let closest = reverse ? 0 : Number.MAX_VALUE;
     let closest_item = null;
 
@@ -227,7 +230,7 @@ let sketch = function(p) {
 
     let selection = getRandoms(expansion_candidates, 0, rs.length - 1);
     selection.forEach(r => {
-      let dist = rs[r][2];
+      let dist = front[rs[r][1]][rs[r][0]].dist;
       if (sign * dist < sign * closest) {
         closest_item = rs[r];
         closest = dist;
@@ -238,19 +241,19 @@ let sketch = function(p) {
 
   function getAdjacentIndices(q, include_diagonals) {
     let indices = [];
-    if (q[0] < nx - 1) indices.push([q[0] + 1, q[1], q[2] + 1]);
-    if (q[1] < ny - 1) indices.push([q[0], q[1] + 1, q[2] + 1]);
-    if (q[0] > 0) indices.push([q[0] - 1, q[1], q[2] + 1]);
-    if (q[1] > 0) indices.push([q[0], q[1] - 1, q[2] + 1]);
+    if (q[0] < nx - 1) indices.push([q[0] + 1, q[1]]);
+    if (q[1] < ny - 1) indices.push([q[0], q[1] + 1]);
+    if (q[0] > 0) indices.push([q[0] - 1, q[1]]);
+    if (q[1] > 0) indices.push([q[0], q[1] - 1]);
 
     if (include_diagonals) {
       if (q[0] < nx - 1) {
-        if (q[1] < ny - 1) indices.push([q[0] + 1, q[1] + 1, q[2] + 1]);
-        if (q[1] > 0) indices.push([q[0] + 1, q[1] - 1, q[2] + 1]);
+        if (q[1] < ny - 1) indices.push([q[0] + 1, q[1] + 1]);
+        if (q[1] > 0) indices.push([q[0] + 1, q[1] - 1]);
       }
       if (q[0] > 0) {
-        if (q[1] < ny - 1) indices.push([q[0] - 1, q[1] + 1, q[2] + 1]);
-        if (q[1] > 0) indices.push([q[0] - 1, q[1] - 1, q[2] + 1]);
+        if (q[1] < ny - 1) indices.push([q[0] - 1, q[1] + 1]);
+        if (q[1] > 0) indices.push([q[0] - 1, q[1] - 1]);
       }
     }
     return indices;
@@ -261,14 +264,24 @@ let sketch = function(p) {
       console.error('Next pixel is not from the neighboorhood', neighborhood);
       return neighborhood;
     }
-    const expansion = getAdjacentIndices(next, expand_with_diagonals).filter(
+
+    let expansion = getAdjacentIndices(next, expand_with_diagonals).filter(
       pos => !front[pos[1]][pos[0]].filled
     );
+
+    expansion.forEach(pos => {
+      front[pos[1]][pos[0]].dist = front[next[1]][next[0]].dist + 1;
+    });
+
+    expansion = expansion.filter(pos => !front[pos[1]][pos[0]].adjacent);
+    expansion.forEach(pos => {
+      front[pos[1]][pos[0]].adjacent = true;
+    });
 
     const next_index = neighborhood.indexOf(next);
     neighborhood.splice(next_index, 1);
 
-    return union(neighborhood, expansion); // return union
+    return neighborhood.concat(expansion);
   }
 
   function getSurroundingColor(q) {
