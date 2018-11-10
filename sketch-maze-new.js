@@ -1,12 +1,12 @@
 let nx;
 let ny;
 let size = 2;
-let img_resolution = 3;
+let img_resolution = 5;
 let speed = 500;
 
 let expand_with_diagonals = false;
 let expansion_candidates = 10;
-let selection_size = 100;
+let selection_size = 50;
 let reversed = true;
 let include_original = false;
 
@@ -20,7 +20,9 @@ let sketch = function(p) {
   let THE_SEED;
 
   p.preload = function() {
-    img = p.loadImage('./munch.jpg');
+    img = p.loadImage(
+      'https://raw.githubusercontent.com/kgolid/pixel-sorting/master/img.jpg'
+    );
   };
 
   p.setup = function() {
