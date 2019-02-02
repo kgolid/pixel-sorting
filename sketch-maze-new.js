@@ -1,7 +1,7 @@
 let nx;
 let ny;
-let size = 2;
-let img_resolution = 5;
+let size = 1;
+let img_resolution = 4;
 let speed = 500;
 
 let expand_with_diagonals = false;
