@@ -4,9 +4,9 @@ let size = 2;
 let img_resolution = 5;
 
 let expansion_candidates = 8;
-let selection_size = 100;
+let selection_size = 500;
 let reversed = true;
-let include_original = false;
+let include_original = true;
 
 let tick = 0;
 let img, imgpixels;
@@ -18,7 +18,9 @@ let sketch = function(p) {
   let THE_SEED;
 
   p.preload = function() {
-    img = p.loadImage('https://raw.githubusercontent.com/kgolid/pixel-sorting/master/img.jpg');
+    img = p.loadImage(
+      'https://raw.githubusercontent.com/kgolid/pixel-sorting/master/img.jpg'
+    );
   };
 
   p.setup = function() {
