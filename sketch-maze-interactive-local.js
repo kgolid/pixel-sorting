@@ -2,10 +2,13 @@ const maxWidth = 1200;
 const maxHeight = 800;
 const speed = 500;
 const expand_with_diagonals = false;
-const expansion_candidates = 1;
-const selection_size = 10;
-const reversed = true;
+const expansion_candidates = 30;
+const selection_size = 18;
+const reversed = false;
 const include_original = false;
+
+const local_swap = true;
+const max_swap_dist = 50;
 
 let nx, ny;
 let img, imgpixels;
@@ -15,8 +18,8 @@ let pixels_placed;
 let ready_for_processing;
 let front;
 
-let sketch = function(p) {
-  p.setup = function() {
+let sketch = function (p) {
+  p.setup = function () {
     const c = p.createCanvas(600, 600);
     ready_for_processing = false;
 
@@ -29,7 +32,7 @@ let sketch = function(p) {
     c.dragOver(fileDropped);
   };
 
-  p.draw = function() {
+  p.draw = function () {
     if (ready_for_processing) {
       if (pixels_placed < nx * ny - speed) placePixels(speed);
       else if (pixels_placed < nx * ny) placePixels(nx * ny - pixels_placed);
@@ -75,33 +78,26 @@ let sketch = function(p) {
     imgpixels = newArray(ny).map((_, j) =>
       newArray(nx).map((_, i) => {
         var loc = (i + j * img.width) * 4;
-        return [
-          img.pixels[loc + 0],
-          img.pixels[loc + 1],
-          img.pixels[loc + 2],
-          i,
-          j
-        ];
+        return [img.pixels[loc + 0], img.pixels[loc + 1], img.pixels[loc + 2], i, j];
       })
     );
 
     front = newArray(ny).map((_, j) =>
       newArray(nx).map((_, i) => {
-        return { bx: i, by: j, filled: false, adjacent: false, dist: -1 };
+        return { bx: i, by: j, filled: false, adjacent: false, dist: -1, ndiff: -1 };
       })
     );
     drawImage(imgpixels);
 
-    const centre = [
-      Math.floor(Math.random() * nx),
-      Math.floor(Math.random() * ny)
-    ];
+    const centre = [Math.floor(Math.random() * nx), Math.floor(Math.random() * ny)];
+    //const centre = [Math.floor(nx / 2), Math.floor(ny / 2)];
     front[centre[1]][centre[0]] = {
       bx: centre[0],
       by: centre[1],
       filled: true,
       neighbor: true,
-      dist: 0
+      dist: 0,
+      ndiff: 0,
     };
 
     drawPixel(centre);
@@ -139,13 +135,7 @@ let sketch = function(p) {
       let frontBest = positionInFront(best);
 
       // Swap expansion pixel with matching pixel.
-      swap_refs(
-        currentPos[0],
-        currentPos[1],
-        frontBest[0],
-        frontBest[1],
-        false
-      );
+      swap_refs(currentPos[0], currentPos[1], frontBest[0], frontBest[1], false);
 
       front[currentPos[1]][currentPos[0]].filled = true;
 
@@ -158,13 +148,7 @@ let sketch = function(p) {
       let frontScanPos = positionInFront([col, row]);
 
       // Swap in back array to consolidate (critical for performance).
-      swap_refs(
-        currentPos[0],
-        currentPos[1],
-        frontScanPos[0],
-        frontScanPos[1],
-        true
-      );
+      swap_refs(currentPos[0], currentPos[1], frontScanPos[0], frontScanPos[1], true);
 
       pixels_placed++;
     }
@@ -194,7 +178,7 @@ let sketch = function(p) {
     return p.sqrt(p.pow(dx, 2) + p.pow(dy, 2) + p.pow(dz, 2));
   }
 
-  p.keyPressed = function() {
+  p.keyPressed = function () {
     if (p.keyCode === 80) p.saveCanvas('sketch_', 'jpeg');
   };
 
@@ -247,14 +231,12 @@ let sketch = function(p) {
     while (arr.length < n) {
       let rand = Math.floor(p.random() * (to - from)) + from;
 
-      let yy = Math.floor(rand / nx);
-      let xx = rand % nx;
-
-      if(cpos != null) {
+      if (local_swap && cpos != null) {
+        let yy = Math.floor(rand / nx);
+        let xx = rand % nx;
         var pos = [imgpixels[yy][xx][3], imgpixels[yy][xx][4]];
 
-        if(Math.sqrt(Math.pow(pos[0] - cpos[0], 2) + Math.pow(pos[1] - cpos[1], 2)) < 50 || tick > 2000) 
-          arr.push(rand);
+        if (dist(pos, cpos) < max_swap_dist || tick > 6000) arr.push(rand);
         tick++;
       } else {
         arr.push(rand);
@@ -271,8 +253,8 @@ let sketch = function(p) {
     let sign = reverse ? -1 : 1;
 
     let selection = getRandoms(expansion_candidates, 0, rs.length - 1);
-    selection.forEach(r => {
-      let dist = front[rs[r][1]][rs[r][0]].dist;
+    selection.forEach((r) => {
+      let dist = front[rs[r][1]][rs[r][0]].ndiff;
       if (sign * dist < sign * closest) {
         closest_item = rs[r];
         closest = dist;
@@ -308,15 +290,19 @@ let sketch = function(p) {
     }
 
     let expansion = getAdjacentIndices(next, expand_with_diagonals).filter(
-      pos => !front[pos[1]][pos[0]].filled
+      (pos) => !front[pos[1]][pos[0]].filled
     );
 
-    expansion.forEach(pos => {
+    expansion.forEach((pos) => {
       front[pos[1]][pos[0]].dist = front[next[1]][next[0]].dist + 1;
+      front[pos[1]][pos[0]].ndiff = compareCols(
+        originalpixels[pos[1]][pos[0]],
+        originalpixels[next[1]][next[0]]
+      );
     });
 
-    expansion = expansion.filter(pos => !front[pos[1]][pos[0]].adjacent);
-    expansion.forEach(pos => {
+    expansion = expansion.filter((pos) => !front[pos[1]][pos[0]].adjacent);
+    expansion.forEach((pos) => {
       front[pos[1]][pos[0]].adjacent = true;
     });
 
@@ -328,18 +314,22 @@ let sketch = function(p) {
 
   function getSurroundingColor(q) {
     const adj = getAdjacentIndices(q, true)
-      .filter(pos => front[pos[1]][pos[0]].filled)
-      .map(ind => colorInBack(ind));
+      .filter((pos) => front[pos[1]][pos[0]].filled)
+      .map((ind) => colorInBack(ind));
     if (include_original) adj.push(originalpixels[q[1]][q[0]]);
     return meanColor(adj);
   }
 
   function meanColor(arr) {
-    let sx = arr.map(x => x[0]).reduce((a, b) => a + b, 0);
-    let sy = arr.map(x => x[1]).reduce((a, b) => a + b, 0);
-    let sz = arr.map(x => x[2]).reduce((a, b) => a + b, 0);
+    let sx = arr.map((x) => x[0]).reduce((a, b) => a + b, 0);
+    let sy = arr.map((x) => x[1]).reduce((a, b) => a + b, 0);
+    let sz = arr.map((x) => x[2]).reduce((a, b) => a + b, 0);
 
     return [sx / arr.length, sy / arr.length, sz / arr.length];
+  }
+
+  function dist(a, b) {
+    return Math.sqrt(Math.pow(b[0] - a[0], 2) + Math.pow(b[1] - a[1], 2));
   }
 };
 new p5(sketch);
