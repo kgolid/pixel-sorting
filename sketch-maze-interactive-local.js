@@ -246,11 +246,11 @@ let sketch = function (p) {
   }
 
   function getNearest(rs) {
-    const reverse = p.random() > 0.97 ? !reversed : reversed;
-    let closest = reverse ? 0 : Number.MAX_VALUE;
+    //const reverse = p.random() > 0.97 ? !reversed : reversed;
+    let closest = reversed ? 0 : Number.MAX_VALUE;
     let closest_item = null;
 
-    let sign = reverse ? -1 : 1;
+    let sign = reversed ? -1 : 1;
 
     let selection = getRandoms(expansion_candidates, 0, rs.length - 1);
     selection.forEach((r) => {
